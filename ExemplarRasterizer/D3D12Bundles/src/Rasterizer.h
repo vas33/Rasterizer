@@ -72,8 +72,7 @@ class Rasterizer
 public:
 	Rasterizer(ID3D12Device* device,
 		UINT width, UINT height,
-		DXGI_FORMAT format,
-		UINT vbSize, UINT ibSize);
+		DXGI_FORMAT format);
 
 	void BuildDesrciptorsBase();
 	void BuildResources();
@@ -89,19 +88,30 @@ public:
 		ID3D12PipelineState* computePSO,
 		ID3D12Resource* inputVb,
 		ID3D12Resource* inputIb,
+		unsigned int numIndices,
 		ID3D12Resource* constantBuffer = nullptr);
 
-	void SetConstantBuffer(const SceneConstantBuffer& constBuffer);
 	void OnResize(UINT newWidth, UINT newHeight);
+	
+	ID3D12Resource* Output()
+	{
+		return m_OutputResource.Get();
+	}
+
+	ID3D12Resource* OutputDepth()
+	{
+		return m_OutputDepth.Get();
+	}
+
+	void SetConstantBufferData(const SceneConstantBuffer& constBufferData);
+
 private:
 	void CreateConstantBuffers();
-private:
+private:	
 	ID3D12Device* m_Device = nullptr;
 	DXGI_FORMAT m_Format;
 	UINT m_Width = 800;
 	UINT m_Height = 600;
-	UINT m_VBSize = 0;
-	UINT m_IBSize = 0;
 
 	//descriptors
 	
@@ -111,6 +121,8 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_VertBufferResource = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_IndexBufferResource = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_OutputResource = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_OutputDepth = nullptr;
+
 
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE m_ConstantsTableCPU;
@@ -124,4 +136,7 @@ private:
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE m_OutputTextureCPUUav;
 	CD3DX12_GPU_DESCRIPTOR_HANDLE m_OutputTextureGPUUav;
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE m_OutputDepthCPUUav;
+	CD3DX12_GPU_DESCRIPTOR_HANDLE m_OutputDepthGPUUav;
 };

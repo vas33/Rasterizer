@@ -20,5 +20,15 @@ SamplerState    g_sampler : register(s0);
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
+    float3 color = g_txDiffuse.Sample(g_sampler, input.uv);
+
+    float4 resultColor = float4(1.f, 0.f, 0.f, 1.f);
+
+    //  float3 filter = float3(0.25f, 1.0f, 0.25f);
+
+    //return float4(color.xyz , 1.0f);
+
+    //return resultColor;
+
     return g_txDiffuse.Sample(g_sampler, input.uv);
 }

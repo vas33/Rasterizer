@@ -20,7 +20,9 @@ using Microsoft::WRL::ComPtr;
 struct SceneConstantBuffer
 {
     XMFLOAT4X4 mvp;        // Model-view-projection (MVP) matrix.
-    FLOAT padding[48];
+    XMFLOAT4X4 projection;
+    //FLOAT padding[48];
+    FLOAT padding[32];
 };
 
 class FrameResource
@@ -30,7 +32,7 @@ private:
 
 public:
 
-
+    
     ComPtr<ID3D12CommandAllocator> m_commandAllocator;
     ComPtr<ID3D12CommandAllocator> m_bundleAllocator;
     ComPtr<ID3D12GraphicsCommandList> m_bundle;

@@ -38,11 +38,17 @@ public:
     virtual void OnKeyDown(UINT8 key);
     virtual void OnKeyUp(UINT8 key);
 
+    ID3D12Resource* GetCurrentBackBuffer()
+    {
+        return m_renderTargets[m_frameIndex].Get();
+    }
+
 private:
     static const UINT FrameCount = 3;
     static const UINT CityRowCount = 10;
     static const UINT CityColumnCount = 3;
     static const bool UseBundles = false;
+    static const bool UseCompiuteRasterizer = true;
 
     // Pipeline objects.
     CD3DX12_VIEWPORT m_viewport;
@@ -66,11 +72,21 @@ private:
 
     // App resources.
     UINT m_numIndices;
+
     ComPtr<ID3D12Resource> m_vertexBuffer;
     ComPtr<ID3D12Resource> m_indexBuffer;
+
+    UINT m_numIndicesQuad;
+    ComPtr<ID3D12Resource> m_vertexBufferQuad;
+    ComPtr<ID3D12Resource> m_indexBufferQuad;
+
     ComPtr<ID3D12Resource> m_texture;
     D3D12_VERTEX_BUFFER_VIEW m_vertexBufferView;
     D3D12_INDEX_BUFFER_VIEW m_indexBufferView;
+
+    D3D12_VERTEX_BUFFER_VIEW m_vertexBufferViewQuad;
+    D3D12_INDEX_BUFFER_VIEW m_indexBufferViewQuad;
+
     StepTimer m_timer;
     UINT m_cbvSrvDescriptorSize;
     UINT m_rtvDescriptorSize;
@@ -90,7 +106,11 @@ private:
 
     void LoadPipeline();
     void LoadAssets();
+    void BuildRootSignature(const D3D12_FEATURE_DATA_ROOT_SIGNATURE& featureData, ComPtr<ID3DBlob>& error);
+    void BuildRasterizerRootSignature(const D3D12_FEATURE_DATA_ROOT_SIGNATURE& featureData, ComPtr<ID3DBlob>& error);
+    void BuildDescriptorHeaps();
     void CreateFrameResources();
+    void CreateQuadVertexAndIndexBuffer();
     void PopulateCommandList(FrameResource* pFrameResource);
 
     std::unique_ptr<Rasterizer> m_Rasterizer;

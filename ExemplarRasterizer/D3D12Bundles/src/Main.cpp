@@ -18,3 +18,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow)
     D3D12Bundles sample(1280, 720, L"D3D12 Bundles Sample");
     return Win32Application::Run(&sample, hInstance, nCmdShow);
 }
+
+
+
+//TODO add simple quad as base geometry , see why data coming is broken, vertices and indices
+//TODO see how quad is rendered first (seen by camera)
+//TODO add rasterizer in CS
+//TODO why picture is inverted ?? 

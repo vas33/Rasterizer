@@ -122,6 +122,9 @@ void FrameResource::PopulateCommandList(ID3D12GraphicsCommandList* pCommandList,
             pCommandList->DrawIndexedInstanced(numIndices, 1, 0, 0, 0);
         //}
     //}
+
+    //draw with cimpute shader
+
     PIXEndEvent(pCommandList);
 }
 
@@ -129,6 +132,7 @@ void XM_CALLCONV FrameResource::UpdateConstantBuffers(FXMMATRIX view, CXMMATRIX 
 {
     XMMATRIX model;
     XMFLOAT4X4 mvp;
+    XMFLOAT4X4 matrixProjection;
 
     //for (UINT i = 0; i < m_cityRowCount; i++)
     //{
@@ -149,7 +153,10 @@ void XM_CALLCONV FrameResource::UpdateConstantBuffers(FXMMATRIX view, CXMMATRIX 
     // Compute the model-view-projection matrix.
     XMStoreFloat4x4(&mvp, XMMatrixTranspose(model * view * projection));
 
+    XMStoreFloat4x4(&matrixProjection, XMMatrixTranspose(projection));
+
     // Copy this matrix into the appropriate location in the upload heap subresource.
     memcpy(&m_pConstantBuffers[0], &mvp, sizeof(mvp));
+    m_pConstantBuffers[0].projection = matrixProjection;
 
 }

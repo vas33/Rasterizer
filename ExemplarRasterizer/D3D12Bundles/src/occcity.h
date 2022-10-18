@@ -13,7 +13,7 @@
 
 namespace SampleAssets
 {
-    LPCWSTR DataFileName = L"occcity.bin";
+    const LPCWSTR DataFileName = L"occcity.bin";
 
     const D3D12_INPUT_ELEMENT_DESC StandardVertexDescription[] =
     {
@@ -22,7 +22,8 @@ namespace SampleAssets
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
         { "TANGENT",  0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
     };
-    UINT StandardVertexDescriptionNumElements = _countof(StandardVertexDescription);
+    
+    const UINT StandardVertexDescriptionNumElements = _countof(StandardVertexDescription);
 
     const UINT StandardVertexStride = 44;
 
@@ -57,13 +58,30 @@ namespace SampleAssets
     const UINT IndexDataOffset = 1344536;
     const UINT IndexDataSize = 74568;
 
-    TextureResource Textures[] =
+   const TextureResource Textures[] =
     {
         { 1024, 1024, 1, DXGI_FORMAT_BC1_UNORM, { { 0, 524288, 2048 }, } }, // city.dds
     };
 
-    DrawParameters Draws[] =
+    const DrawParameters Draws[] =
     {
         { 0, -1, -1, 0, 18642, 0 },
+    };
+
+    struct VertexCustom
+    {
+        XMFLOAT3 Pos;     //12 bytes
+        XMFLOAT3 Normal;  //12 bytes
+        XMFLOAT2 Tex0;    //8 bytes
+        XMFLOAT3 Tangent; //12 bytes
+
+        VertexCustom(const XMFLOAT3& InPos, const XMFLOAT4& InColor) :
+            Pos(InPos),
+            Tangent(5.f, 5.f, 0.f),
+            Normal(6.f, 6.f, 0.f),
+            Tex0(7.f, 7.f)
+        {
+        }
+
     };
 }
