@@ -168,6 +168,8 @@ void Rasterizer::BuildDesrciptorsBase()
 	m_Device->CreateShaderResourceView(m_IndexBufferResource.Get(), &srvDescIb, m_IndexBufferCPUSrv);
 	m_Device->CreateUnorderedAccessView(m_OutputResource.Get(), nullptr, &uavDesc, m_OutputTextureCPUUav);
 	m_Device->CreateUnorderedAccessView(m_OutputDepth.Get(), nullptr, &uavDescDepth, m_OutputDepthCPUUav);
+	m_Device->CreateUnorderedAccessView(m_OutputDepth2.Get(), nullptr, &uavDescDepth, m_OutputDepth2CPUUav);
+
 }
 
 void Rasterizer::AssignDescriptorsStart(
@@ -179,16 +181,16 @@ void Rasterizer::AssignDescriptorsStart(
 	m_VertexBufferCPUSrv = hCpuDescriptor.Offset(1, descriptorSize);
 	m_IndexBufferCPUSrv = hCpuDescriptor.Offset(1, descriptorSize);
 	m_OutputTextureCPUUav = hCpuDescriptor.Offset(1, descriptorSize);
-	
 	m_OutputDepthCPUUav = hCpuDescriptor.Offset(1, descriptorSize);
+	m_OutputDepth2CPUUav = hCpuDescriptor.Offset(1, descriptorSize);
 
 
 	m_ConstantsTableGPU = hGpuDescriptor;
 	m_VertexBufferGPUSrv = hGpuDescriptor.Offset(1, descriptorSize);
 	m_IndexBufferGPUSrv = hGpuDescriptor.Offset(1, descriptorSize);
 	m_OutputTextureGPUUav = hGpuDescriptor.Offset(1, descriptorSize);
-
 	m_OutputDepthGPUUav = hGpuDescriptor.Offset(1, descriptorSize);
+	m_OutputDepth2GPUUav = hGpuDescriptor.Offset(1, descriptorSize);
 
 
 	//m_ConstantsTableCPU = hCpuDescriptor;
@@ -250,7 +252,8 @@ void Rasterizer::Execute(
 	cmdList->SetComputeRootDescriptorTable(1, m_IndexBufferGPUSrv);
 	cmdList->SetComputeRootDescriptorTable(2, m_OutputTextureGPUUav);
 	cmdList->SetComputeRootDescriptorTable(3, m_OutputDepthGPUUav);
-	cmdList->SetComputeRootConstantBufferView(4, m_ConstantBuffer->Resource()->GetGPUVirtualAddress());
+	cmdList->SetComputeRootDescriptorTable(4, m_OutputDepth2GPUUav);
+	cmdList->SetComputeRootConstantBufferView(5, m_ConstantBuffer->Resource()->GetGPUVirtualAddress());
 	
 	 
 	unsigned int ThreadsTOExecute = ceilf(numIndices / 3 / 256.f);

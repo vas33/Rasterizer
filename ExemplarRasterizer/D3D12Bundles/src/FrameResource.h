@@ -21,8 +21,10 @@ struct SceneConstantBuffer
 {
     XMFLOAT4X4 mvp;        // Model-view-projection (MVP) matrix.
     XMFLOAT4X4 projection;
+    float Width;
+    float height;
     //FLOAT padding[48];
-    FLOAT padding[32];
+    FLOAT padding[30];
 };
 
 class FrameResource

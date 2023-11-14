@@ -122,6 +122,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_IndexBufferResource = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_OutputResource = nullptr;
 	Microsoft::WRL::ComPtr<ID3D12Resource> m_OutputDepth = nullptr;
+	Microsoft::WRL::ComPtr<ID3D12Resource> m_OutputDepth2 = nullptr;
 
 
 
@@ -139,4 +140,7 @@ private:
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE m_OutputDepthCPUUav;
 	CD3DX12_GPU_DESCRIPTOR_HANDLE m_OutputDepthGPUUav;
+
+	CD3DX12_CPU_DESCRIPTOR_HANDLE m_OutputDepth2CPUUav;
+	CD3DX12_GPU_DESCRIPTOR_HANDLE m_OutputDepth2GPUUav;
 };

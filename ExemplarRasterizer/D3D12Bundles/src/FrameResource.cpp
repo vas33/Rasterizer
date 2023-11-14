@@ -152,11 +152,16 @@ void XM_CALLCONV FrameResource::UpdateConstantBuffers(FXMMATRIX view, CXMMATRIX 
 
     // Compute the model-view-projection matrix.
     XMStoreFloat4x4(&mvp, XMMatrixTranspose(model * view * projection));
+    
+    XMStoreFloat4x4(&matrixProjection, XMMatrixTranspose(model * view * projection));
 
-    XMStoreFloat4x4(&matrixProjection, XMMatrixTranspose(projection));
-
+    
     // Copy this matrix into the appropriate location in the upload heap subresource.
     memcpy(&m_pConstantBuffers[0], &mvp, sizeof(mvp));
+    
+    //memcpy(&m_pConstantBuffers[0].projection, &matrixProjection, sizeof(matrixProjection));
     m_pConstantBuffers[0].projection = matrixProjection;
 
+    m_pConstantBuffers[0].Width = 1280;
+    m_pConstantBuffers[0].height= 720;
 }

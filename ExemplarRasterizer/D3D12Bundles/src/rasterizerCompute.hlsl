@@ -14,6 +14,8 @@ cbuffer cbPerObject : register(b0)
 {
 	float4x4 gWorldViewProj;
 	float4x4 gProj;
+	float gWidth;
+	float gHeight;
 	//float gTime;
 	//float gZoom;
 	//float2 gOffset;
@@ -24,112 +26,38 @@ cbuffer cbPerObject : register(b0)
 
 StructuredBuffer<VertexData> vertexBuffer : register(t0);
 StructuredBuffer<uint> indexBuffer : register(t1);
+Texture2D        g_txDiffuse : register(t2);
 
 RWTexture2D<float4> gOutput : register(u0);
-
 RWTexture2D<uint> gOutputDepth : register(u1);
+SamplerState    g_sampler : register(s0);
 
 #define N 256
 
-/*
-uint mandlebrod(double realIn, double imaginaryIn)
-{
-	uint maxIterations = gMaxIterationsCount;
-	double real = realIn;
-	double imaginary = imaginaryIn;
-
-	uint numIterations = 0;
-	while (real * real + imaginary * imaginary <= 4.0 && numIterations < maxIterations)
-	{
-		double  newReal = real * real - imaginary * imaginary;
-		double  newImaginary = 2.0 * real * imaginary;
-
-		real = realIn + newReal;
-		imaginary = imaginaryIn + newImaginary;
-
-		++numIterations;
-	}
-
-	return numIterations;
-}
-*/
-/*
-uint getNumIterationsForCoordinate(double x, double y)
-{
-	float initialRealPartStart = -2.0;
-	float initialRealPartEnd = 1.0;
-	float initialImPartStart = -1.0;
-	float initialImPartEnd = 1.0;
-
-	float realPartStart = initialRealPartStart;
-	float realPartEnd = initialRealPartEnd;
-	float imPartStart = initialImPartStart;
-	float imPartEnd = initialImPartEnd;
-
-	float oldCenter = (initialRealPartStart + initialRealPartEnd) / 2;
-	float oldCenterY = (initialImPartStart + initialImPartEnd) / 2;
-
-	realPartStart = realPartStart / gZoom;
-	realPartEnd = realPartEnd / gZoom;
-	imPartStart = imPartStart / gZoom;
-	imPartEnd = imPartEnd / gZoom;
-
-	float newCenter = (realPartStart + realPartEnd) / 2;
-	float newCenterY = (imPartStart + imPartEnd) / 2;
-
-	float coompensateX = (oldCenter - newCenter) / 2;
-	float coompensateY = (oldCenterY - newCenterY) / 2;
-
-	realPartStart += (gOffset.x - coompensateX);
-	realPartEnd += (gOffset.x - coompensateX);
-	imPartStart += (gOffset.y - coompensateY);
-	imPartEnd += (gOffset.y - coompensateY);
-
-
-	float widthDifference = realPartEnd - realPartStart;
-	float heighDifference = realPartEnd - realPartStart;
-
-	float xCoord = x;
-	float yCoord = y;
-	//Todo pass image width as constant
-
-	//TODO PASS width height
-	float first = realPartStart + (xCoord / 1920.0) * (widthDifference);
-	float second = imPartStart + (yCoord / 1080.0) * (heighDifference);
-
-	uint numIterations = mandlebrod(first, second);
-
-	return numIterations;
-}
-*/
-
 float4 convert(float4 projected)
 {
-	//TODO why need this no idea ? 
 	float4 result = float4(0.f, 0.f, 0.f, 0.f);
-	result.x = projected.x / projected.w * 1280/2;
-	result.y = projected.y / projected.w * 720/2;
+
+	//TODO explain why do this
+	result.x = projected.x / projected.w;
+	result.y= projected.y / projected.w;
 	
+	//convert to raster space
+	result.x = (result.x + 1) * gWidth / 2;
+	result.y = (1 - result.y) * gHeight / 2;
+
 	return result;
 }
 
 float4 project(float3 vertex)
 {
-	//hack add some dummy offset to put imag in middle of picture
-
 	//float4 projected = float4(vertex.xyz, 1.f);
 	float4 projected = mul(float4(vertex, 1.0f), gWorldViewProj);
-	
 	projected = convert(projected);
-
-	
-	//TODO why need this no idea ? 
-	projected.x += 1280/2;
-	projected.y += 720/2;
-
 
 	return projected;
 }
+
 float distance(float3 vertex1, float3 vertex2)
 {
 	return sqrt(pow(2, vertex2.x - vertex2.x) + pow(2, vertex2.y - vertex1.y) + pow(2, vertex2.z - vertex1.z));
@@ -206,6 +134,7 @@ void rasterizeAkaTellusim(float3 p0Unproj, float3 p1Unproj, float3 p2Unproj)
 		return;
 	}
 
+	//find triangle AABB dimensions
 	//Get min point 
 	float2 min_p = floor(min(min(p0.xy, p1.xy), p2.xy));
 
@@ -223,9 +152,10 @@ void rasterizeAkaTellusim(float3 p0Unproj, float3 p1Unproj, float3 p2Unproj)
 	//max_p = clamp(max_p, vec2(0.0f), surface_size - 1.0f);
 
 	//inverse determinant
-	float idet = 1.0f / det;
+	float idet = 1.0f / det;	
 
-	//find increment step for textcoord
+	//find bayocentric coordinates by dividing small triangle areas by big triangle area
+	//also there is some optimization done here
 	float2 texcoord_dx = float2(-p20.y, p10.y) * idet;
 	float2 texcoord_dy = float2(p20.x, -p10.x) * idet;
 
@@ -243,8 +173,7 @@ void rasterizeAkaTellusim(float3 p0Unproj, float3 p1Unproj, float3 p2Unproj)
 
 			if (texcoord.x > -1e-5f && texcoord.y > -1e-5f && texcoord.x + texcoord.y < 1.0f + 1e-5f) {
 
-				//bayocentric interpolation of Z axis of triangle
-				//float z = p10.z * texcoord.x + p20.z * texcoord.y + p0.z;
+				//use bayocentric interpolation to find Z for point P
 				float z = p10U.z * texcoord.x + p20U.z * texcoord.y + p0Unproj.z;
 				
 				//convert values to int
@@ -305,6 +234,73 @@ void colorTriangleTellusim(float3 vertex1, float3 vertex2, float3 vertex3)
 	//drawLine(vertex3, vertex1, colorRed);
 }
 
+//my implementation of rasterization
+float areaFunction(float3 a, float3 b, float3 c)
+{
+	return (c[0] - a[0]) * (b[1] - a[1]) - (c[1] - a[1]) * (b[0] - a[0]);
+}
+
+void rasterize(float3 vertex1, float3 vertex2, float3 vertex3, 
+	float2 uv1, float2 uv2, float2 uv3)
+{
+	//project vertices
+	float3 p0 = project(vertex1);
+	float3 p1 = project(vertex2);
+	float3 p2 = project(vertex3);
+
+	//perspective coorection
+	vertex1.z = 1 / vertex1.z;
+	vertex2.z = 1 / vertex2.z;
+	vertex3.z = 1 / vertex3.z;
+
+
+	//get AABB of triangle
+	float2 min_p = floor(min(min(p0.xy, p1.xy), p2.xy));
+	//Get max point
+	float2 max_p = ceil(max(max(p0.xy, p1.xy), p2.xy));
+
+	float area = areaFunction(p0, p1, p2);
+
+	//iterate over triangle's AABB
+	for (float y = min_p.y; y <= max_p.y; y += 1.0f) {
+
+		//float2 texcoord = texcoord_x + texcoord_y;
+
+		//Iterate pixel by pixel			
+		for (float x = min_p.x; x <= max_p.x; x += 1.0f)
+		{
+			float3 p = float3(x + 0.5, y + 0.5, 0.f);
+
+			//get areas of small triangles inside triangle
+			//also this is edge function performing edge test
+			float w0 = areaFunction(p1, p2, p);
+			float w1 = areaFunction(p2, p0, p);
+			float w2 = areaFunction(p0, p1, p);
+			
+			//point is between edges
+			if (w0 >= 0 && w1 >= 0 && w2 >= 0)
+			{
+				//divide areas to get baryctentric coordinates
+				w0 /= area;
+				w1 /= area;
+				w2 /= area;
+
+				//calculate depth
+				float z = 1 / (w0 * vertex1.z + w1 * vertex2.z + w2 * vertex3.z);
+
+				//interpolate uv 
+				float2 uv = 1 / w0 * uv1 + w1 * uv2 + w2 * uv2;
+
+				int2 coords = int2(p.x, p.y);
+				InterlockedMax(gOutputDepth[coords.xy], z, gOutputDepth[coords.xy]);
+				gOutput[coords.xy] = depthToColor(gOutputDepth[coords.xy]);
+				
+				//TODO color, we cannot call sample in CS fix it somehow
+				//gOutput[coords.xy] = g_txDiffuse.Sample(g_sampler, uv);				
+			}
+		}
+	}
+}
 
 [numthreads(N, 1, 1)]
 void CS(int3 groupThreadID : SV_GroupThreadID,
@@ -326,9 +322,16 @@ void CS(int3 groupThreadID : SV_GroupThreadID,
 	index2 = indexBuffer[index2];
 	index3 = indexBuffer[index3];
 	
-	colorTriangleTellusim(
-		vertexBuffer[index1].position,
+	//colorTriangleTellusim(
+	//	vertexBuffer[index1].position,
+	//	vertexBuffer[index2].position,
+	//	vertexBuffer[index3].position
+	//);
+
+	rasterize(vertexBuffer[index1].position,
 		vertexBuffer[index2].position,
-		vertexBuffer[index3].position
-	);
+		vertexBuffer[index3].position, 
+		vertexBuffer[index1].uv,
+		vertexBuffer[index2].uv, 
+		vertexBuffer[index3].uv);
 }

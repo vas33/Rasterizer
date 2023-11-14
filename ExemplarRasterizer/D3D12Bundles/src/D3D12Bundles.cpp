@@ -224,16 +224,20 @@ void D3D12Bundles::BuildRasterizerRootSignature(const D3D12_FEATURE_DATA_ROOT_SI
 	CD3DX12_DESCRIPTOR_RANGE1 uavTable2;
 	uavTable2.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 1);
 
+	CD3DX12_DESCRIPTOR_RANGE1 uavTable3;
+	uavTable3.Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 2);
+
 	CD3DX12_DESCRIPTOR_RANGE1 cbvTable;
 	cbvTable.Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
 
 
-	CD3DX12_ROOT_PARAMETER1 slotRootParameter[5];
+	CD3DX12_ROOT_PARAMETER1 slotRootParameter[6];
 	slotRootParameter[0].InitAsDescriptorTable(1, &srvTable1);
 	slotRootParameter[1].InitAsDescriptorTable(1, &srvTable2);
 	slotRootParameter[2].InitAsDescriptorTable(1, &uavTable);
 	slotRootParameter[3].InitAsDescriptorTable(1, &uavTable2);
-	slotRootParameter[4].InitAsConstantBufferView(0, 0);
+	slotRootParameter[4].InitAsDescriptorTable(1, &uavTable3);
+	slotRootParameter[5].InitAsConstantBufferView(0, 0);
 
 	CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSigDescCompute;
 	rootSigDescCompute.Init_1_1(_countof(slotRootParameter), slotRootParameter);
@@ -252,7 +256,7 @@ void D3D12Bundles::BuildRasterizerRootSignature(const D3D12_FEATURE_DATA_ROOT_SI
 
 void D3D12Bundles::BuildDescriptorHeaps()
 {
-	const unsigned int RasterizerDescriptorCount = 4;
+	const unsigned int RasterizerDescriptorCount = 5;
 
 	// Describe and create a shader resource view (SRV) and constant 
 // buffer view (CBV) descriptor heap.
@@ -968,6 +972,7 @@ void D3D12Bundles::PopulateCommandList(FrameResource* pFrameResource)
 
 		if (UseCompiuteRasterizer)
 		{
+			//populate command list for drawing primitives ( drawing simple quad)
 			pFrameResource->PopulateCommandList(m_commandList.Get(), m_pipelineState1.Get(), m_pipelineState2.Get(), m_currentFrameResourceIndex, m_numIndicesQuad, &m_indexBufferViewQuad,
 				&m_vertexBufferViewQuad, m_cbvSrvHeap.Get(), m_cbvSrvDescriptorSize, m_samplerHeap.Get(), m_rootSignature.Get());
 		}
@@ -981,6 +986,7 @@ void D3D12Bundles::PopulateCommandList(FrameResource* pFrameResource)
 		if (UseCompiuteRasterizer)
 		{
 			//hack for num indices for geometry
+			//Run compute shader to fill depth in buffer
 			auto geomentyIndices = m_indexBufferView.SizeInBytes / 4;
 			m_Rasterizer->Execute(m_commandList.Get(),
 				m_rootSignatureCompute.Get(), m_pipelineStateCompute.Get(),
